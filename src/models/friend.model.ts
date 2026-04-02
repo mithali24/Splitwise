@@ -1,7 +1,7 @@
 export interface Friend{
     id: string;
     name: string;
-    email: String;
+    email: string;
     phone: string;
-    balace: number;
+    balance: number;
 }

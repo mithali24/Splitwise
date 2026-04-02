@@ -25,6 +25,10 @@ export class FriendsRepository{
         return this.friends.find(friend => friend.phone === phone);
     }
 
+     getFriendById(id: string) {
+        return this.friends.find(friend => friend.id === id);
+    }
+
     searchFriends(query:string,pageOption?:PageOptions){
         const lowerQuery = query.toLowerCase();
         const filtered =  this.friends.filter(friend=>{

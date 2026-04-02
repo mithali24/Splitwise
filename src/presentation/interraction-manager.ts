@@ -41,7 +41,7 @@ export const openInterractionManager = () => {
     const { defaultAnswer, validator } = options || {};
     
     return new Promise((resolve) => {
-        rl.question(question + ` ${defaultAnswer ? '(' + defaultAnswer + ')' : ''}`, (answer) => {
+        rl.question(question + ` ${defaultAnswer ? '(' + defaultAnswer + ')' : ''}`, (answer:string) => {
             if (validator && !validator(answer)) {
                 console.log('Invalid input. Please try again.');
                 return resolve(ask(question, { defaultAnswer: defaultAnswer, validator: validator }));
