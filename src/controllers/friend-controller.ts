@@ -13,18 +13,48 @@ export class FriendsController{
     }
 
     addFriend(friend: Friend) {
-        if (this.repository.getFriendById(friend.id)) {
-            throw new ConflictError('Friend with this ID already exists', 'id');
-        }
+       
         if (friend.email && this.checkEmailExists(friend.email)) {
-            throw new ConflictError('Friend with this email already exists', 'id');
+            throw new ConflictError('Friend with this email already exists', 'email');
         }
         if (friend.phone && this.checkPhoneExists(friend.phone)) {
-            throw new ConflictError('Friend with this phone number already exists', 'id');
+            throw new ConflictError('Friend with this phone number already exists', 'phone');
         }
         
         
         FriendsRepository.getInstance().addFriend(friend);
     }
 
+     searchFriend(query: string) {
+        return this.repository.searchFriends(query);
+    }
+
+    updateFriend(identifier: string, updatedFriend: Friend) {
+    const existingFriend =
+        this.repository.findFriendByEmail(identifier) ||
+        this.repository.searchFriends(identifier).data[0];
+
+    if (!existingFriend) {
+        throw new Error("Friend not found");
+    }
+
+    if (
+        updatedFriend.email !== existingFriend.email &&
+        this.checkEmailExists(updatedFriend.email)
+    ) {
+        throw new ConflictError('Friend with this email already exists', 'email');
+    }
+
+    this.repository.updateFriend(existingFriend.email, updatedFriend);
+    }
+
+    deleteFriend(name: string, email: string) {
+    const existingFriend = this.repository.findFriendByEmail(email);
+
+    if (!existingFriend || existingFriend.name !== name) {
+        throw new Error("Friend not found");
+    }
+
+    this.repository.deleteFriend(name, email);
+}
 }

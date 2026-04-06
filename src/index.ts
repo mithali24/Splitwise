@@ -1,6 +1,7 @@
-import { openInterractionManager } from "./presentation/interraction-manager.js"
+import { manageFriends } from "./presentation/friend-manager.js";
 
 const run = async () => {
-  const { ask, choose, close } = openInterractionManager();
-
+  await manageFriends();
 };
+
+run();

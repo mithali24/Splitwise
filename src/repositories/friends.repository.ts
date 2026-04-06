@@ -1,20 +1,24 @@
 import type { Friend } from "../models/friend.model.js";
 import type { PageOptions } from "../core/pagination.types.js";
+import { AppDBManager } from "../models/db-manager.js";
 
-export class FriendsRepository{
-    private static instance: FriendsRepository;
+export class FriendsRepository {
+    private static sharedInstance: FriendsRepository|null=null;
     private friends: Friend[] = [];
-    static getInstance() {
-        if (!FriendsRepository.instance) {
-            FriendsRepository.instance = new FriendsRepository();
+    static getInstance():FriendsRepository {
+        if (!this.sharedInstance) {
+           this.sharedInstance = new FriendsRepository();
         }
-        return FriendsRepository.instance;
+        return this.sharedInstance;
     }
-    private constructor() { };
+    private constructor() {
+        this.friends =AppDBManager.getInstance().getDB()?.table('friends') as Friend[];
+     };
 
     addFriend(friend: Friend) {
         this.friends.push(friend);
-        console.log('Friend added to repository:',friend)
+        console.log('Friend added to repository:', friend)
+        AppDBManager.getInstance().save();
     }
 
     findFriendByEmail(email: string) {
@@ -25,24 +29,60 @@ export class FriendsRepository{
         return this.friends.find(friend => friend.phone === phone);
     }
 
-     getFriendById(id: string) {
-        return this.friends.find(friend => friend.id === id);
+
+    searchFriends(query: string, pageOption?: PageOptions) {
+    const lowerQuery = query.toLowerCase();
+
+    const filtered = this.friends.filter(friend => {
+        // Use ?. to safely access properties and ?? "" to handle null/undefined
+        const name = friend.name?.toLowerCase() ?? "";
+        const email = friend.email?.toLowerCase() ?? "";
+        const phone = friend.phone?.toLowerCase() ?? "";
+
+        return (
+            name.includes(lowerQuery) ||
+            email.includes(lowerQuery) ||
+            phone.includes(lowerQuery)
+        );
+    });
+
+    return {
+        data: filtered.slice(
+            pageOption?.offset || 0,
+            (pageOption?.offset || 0) + (pageOption?.limit || 5)
+        ),
+        matched: filtered.length,
+        total: this.friends.length
+    };
+}
+    
+    updateFriend(email: string, updatedFriend: Friend) {
+    const index = this.friends.findIndex(friend => friend.email === email);
+
+    if (index === -1) {
+        throw new Error("Friend not found");
     }
 
-    searchFriends(query:string,pageOption?:PageOptions){
-        const lowerQuery = query.toLowerCase();
-        const filtered =  this.friends.filter(friend=>{
-            friend.name.toLowerCase().includes(lowerQuery) ||
-            friend.email.toLowerCase().includes(lowerQuery) ||
-            friend.phone.toLowerCase().includes(lowerQuery)
-        })
+    this.friends[index] = updatedFriend;
 
-        return {
-            data:filtered.slice((pageOption?.offset || 0), (pageOption?.offset || 0) + (pageOption?.limit || 5)),
-            matched: filtered.length,
-            total:this.friends.length
-        }
-    }
-
+    console.log("Friend updated:", updatedFriend);
+    AppDBManager.getInstance().save();
 }
 
+
+    deleteFriend(name: string, email: string) {
+    const index = this.friends.findIndex(
+        friend => friend.name === name && friend.email === email
+    );
+
+    if (index === -1) {
+        throw new Error("Friend not found");
+    }
+
+    this.friends.splice(index, 1);
+    console.log(`Friend deleted: ${name} | ${email}`);
+
+    AppDBManager.getInstance().save();
+}
+
+    }
